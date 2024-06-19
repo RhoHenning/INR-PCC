@@ -1,0 +1,22 @@
+component: 'attribute'
+depth: 10
+block_depth: 5
+
+num_freqs: 12
+block_dim: 512
+hidden_dim: 128
+num_blocks: 3
+layer_norm: True
+short_cut: True
+
+batch_size: 4096
+num_steps: 200000
+scheduler_steps: 4
+lr: 0.001
+weight_decay: 0.0001
+lmbda: 1
+occupied_ratio: ~
+check_interval: 1000
+
+quantization_steps: 4096
+threshold: ~
