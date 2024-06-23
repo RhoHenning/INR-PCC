@@ -14,7 +14,7 @@ num_steps: 200000
 scheduler_steps: 4
 lr: 0.001
 weight_decay: 0.0001
-lmbda: 1
+lmbda: 1                   # adjust this to attain different bit rates
 occupied_ratio: ~
 check_interval: 1000
 

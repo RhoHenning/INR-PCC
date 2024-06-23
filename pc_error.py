@@ -37,7 +37,7 @@ def distortion(path_1, path_2, resolution, has_colors=True):
         line = c.decode(encoding='utf-8')
         words = ' '.join(line.split()).split()
         if len(words) >= 3 and words[0] + words[1] in metrics:
-            results[metrics[words[0] + words[1]]] = float(words[-1])
+            results[metrics[words[0] + words[1]]] = eval(words[-1])
         c = subp.stdout.readline()
     if has_colors:
         results['YUV'] = (results['Y'] + results['U'] + results['V']) / 3

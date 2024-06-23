@@ -20,12 +20,17 @@ result_header = [
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('baseline.py')
-    parser.add_argument('--cloud_path', type=str)
-    parser.add_argument('--result_dir', type=str)
-    parser.add_argument('--depth', default=10, type=int)
+    parser.add_argument('--cloud_path', type=str, required=True, metavar='<path>',
+                        help='the path to the original point cloud file')
+    parser.add_argument('--result_dir', type=str, required=True, metavar='<dir>',
+                        help='the path to the directory containing all output files')
+    parser.add_argument('--depth', default=10, type=int, metavar='<int>',
+                        help='voxelization depth of the original point cloud [default: 10]')
     parser.add_argument('--encode_colors', action='store_true')
-    parser.add_argument('--pqs', default=0.5, type=float)
-    parser.add_argument('--qp', default=32, type=int)
+    parser.add_argument('--pqs', default=0.75, type=float, metavar='<float>',
+                        help='position quantization scale used by G-PCC (octree) [default: 0.75]')
+    parser.add_argument('--qp', default=34, type=int, metavar='<int>',
+                        help='quantization parameter used by G-PCC (RAHT) [default: 34]')
     args = parser.parse_args()
 
     bin_path = os.path.join(args.result_dir, 'encoded.bin')
@@ -43,7 +48,9 @@ if __name__ == '__main__':
 
     logger = Logger('baseline.py')
     logger.log('*' * 32 + ' baseline.py ' + '*' * 32)
-    logger.log(str(args))
+    logger.log('Arguments:')
+    for arg_str in vars(args):
+        logger.log(f'    {arg_str}: {getattr(args, arg_str)}')
 
     results = {}
     results['cloud'] = args.cloud_path
@@ -56,7 +63,7 @@ if __name__ == '__main__':
     num_bits = encode_results['total'] * 8
     logger.log(f'Compressed size: {num_bits} bits ({num_bits / len(points):.6} bpp)')
     results['bits'] = num_bits
-    results['bits per point'] = num_bits / len(points)
+    results['bits per point'] = f'{num_bits / len(points):.6}'
     tmc3.decode(bin_path, reconstructed_path)
 
     distortion_results = pc_error.distortion(args.cloud_path, reconstructed_path, (1 << args.depth) - 1, args.encode_colors)

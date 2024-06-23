@@ -41,7 +41,7 @@ def encode_model(model, step_size):
     return stream, model
 
 def local_voxels(block_width):
-    base = torch.arange(block_width, dtype=torch.float32, device=device).unsqueeze(1)
+    base = torch.arange(block_width, dtype=torch.float32, device=device).unsqueeze(dim=1)
     i = base.repeat_interleave(block_width ** 2, dim=0)
     j = base.repeat_interleave(block_width, dim=0).repeat(block_width, 1)
     k = base.repeat(block_width ** 2, 1)
@@ -83,10 +83,14 @@ def reconstruct_attribute(model, voxels):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('test.py')
-    parser.add_argument('--cloud_path', type=str)
-    parser.add_argument('--geometry_path', default=None, type=str)
-    parser.add_argument('--exp_dir', type=str)
-    parser.add_argument('--device', default=None, type=int)
+    parser.add_argument('--cloud_path', type=str, required=True, metavar='<path>',
+                        help='the path to the original point cloud file')
+    parser.add_argument('--geometry_path', default=None, type=str, metavar='<path>',
+                        help='the path to the reconstructed geometry; if omitted, the ground-truth geometry will be applied')
+    parser.add_argument('--exp_dir', type=str, required=True, metavar='<dir>',
+                        help='the path to the directory containing all files needed for the experiment')
+    parser.add_argument('--device', default=None, type=int, metavar='<int>',
+                        help='the selected device')
     args = parser.parse_args()
 
     config_path = os.path.join(args.exp_dir, 'config.yaml')
@@ -104,9 +108,10 @@ if __name__ == '__main__':
     if not os.path.exists(model_path):
         raise FileNotFoundError
 
-    config_dict = yaml.safe_load(open(config_path))
-    for name, value in config_dict.items():
-        setattr(args, name, value)
+    with open(config_path) as file:
+        config_dict = yaml.safe_load(file)
+        for name, value in config_dict.items():
+            setattr(args, name, value)
 
     assert torch.cuda.is_available()
     device = torch.device('cuda')
@@ -120,7 +125,9 @@ if __name__ == '__main__':
 
     logger = Logger('test.py', log_path)
     logger.log('*' * 32 + ' test.py ' + '*' * 32)
-    logger.log(str(args))
+    logger.log('Arguments:')
+    for arg_str in vars(args):
+        logger.log(f'    {arg_str}: {getattr(args, arg_str)}')
     
     results = {}
     results['cloud'] = args.cloud_path
@@ -138,7 +145,7 @@ if __name__ == '__main__':
     blocks = cloud.partition_blocks(points, args.depth, args.block_depth)
     blocks = torch.from_numpy(blocks).to(device)
 
-    model = model = Representation(args.num_freqs, args.block_dim, args.hidden_dim, output_dim, args.num_blocks, args.layer_norm, args.short_cut).to(device)
+    model = Representation(args.num_freqs, args.block_dim, args.hidden_dim, output_dim, args.num_blocks, args.layer_norm, args.short_cut).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
 
     step_size = 1 / args.quantization_steps
@@ -148,7 +155,7 @@ if __name__ == '__main__':
         num_bits += args.block_depth * 3 * (len(blocks) + 1) + 32
     logger.log(f'Compressed size: {num_bits} bits ({num_bits / len(points):.6} bpp)')
     results['bits'] = num_bits
-    results['bits per point'] = num_bits / len(points)
+    results['bits per point'] = f'{num_bits / len(points):.6}'
 
     if args.component == 'geometry':
         reconstructed_points = reconstruct_geometry(model, blocks)
@@ -158,7 +165,7 @@ if __name__ == '__main__':
         logger.log(f'Reconstructed points: {len(reconstructed_points)}')
         logger.log(f'Scaling ratio: {len(reconstructed_points) / len(points):.6}')
         results['threshold'] = args.threshold
-        results['scaling ratio'] = len(reconstructed_points) / len(points)
+        results['scaling ratio'] = f'{len(reconstructed_points) / len(points):.6}'
     elif args.component == 'attribute':
         if args.geometry_path is None:
             voxels = points

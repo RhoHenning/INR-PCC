@@ -10,7 +10,7 @@ from sampler import GeometrySampler, AttributeSampler
 def focal_loss(probs, occupancies, gamma=2, eps=1e-5, alpha=None):
     if alpha is None:
         alpha = 1 - torch.mean(occupancies)
-    probs = probs.squeeze(dim = -1)
+    probs = probs.squeeze(dim=-1)
     alpha_t = alpha * occupancies + (1 - alpha) * (1 - occupancies)
     probs_t = probs * occupancies + (1 - probs) * (1 - occupancies)
     loss = -alpha_t * ((1 - probs_t) ** gamma) * torch.log(probs_t + eps)
@@ -22,10 +22,14 @@ def mse_loss(reconstructed_colors, colors):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('train.py')
-    parser.add_argument('--cloud_path', type=str)
-    parser.add_argument('--geometry_path', default=None, type=str)
-    parser.add_argument('--exp_dir', type=str)
-    parser.add_argument('--device', default=None, type=int)
+    parser.add_argument('--cloud_path', type=str, required=True, metavar='<path>',
+                        help='the path to the original point cloud file')
+    parser.add_argument('--geometry_path', default=None, type=str, metavar='<path>',
+                        help='the path to the reconstructed geometry; if omitted, the ground-truth geometry will be applied')
+    parser.add_argument('--exp_dir', type=str, required=True, metavar='<dir>',
+                        help='the path to the directory containing all files needed for the experiment')
+    parser.add_argument('--device', default=None, type=int, metavar='<int>',
+                        help='the selected device')
     args = parser.parse_args()
 
     config_path = os.path.join(args.exp_dir, 'config.yaml')
@@ -39,9 +43,10 @@ if __name__ == '__main__':
     if not os.path.exists(config_path):
         raise FileNotFoundError
 
-    config_dict = yaml.safe_load(open(config_path))
-    for name, value in config_dict.items():
-        setattr(args, name, value)
+    with open(config_path) as file:
+        config_dict = yaml.safe_load(file)
+        for name, value in config_dict.items():
+            setattr(args, name, value)
 
     assert torch.cuda.is_available()
     device = torch.device('cuda')
@@ -50,7 +55,9 @@ if __name__ == '__main__':
 
     logger = Logger('train.py', log_path)
     logger.log('*' * 32 + ' train.py ' + '*' * 32)
-    logger.log(str(args))
+    logger.log('Arguments:')
+    for arg_str in vars(args):
+        logger.log(f'    {arg_str}: {getattr(args, arg_str)}')
 
     if args.component == 'geometry':
         output_dim = 1

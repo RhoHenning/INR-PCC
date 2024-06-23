@@ -17,7 +17,7 @@ class PositionalEncoding(nn.Module):
         self.output_dim = input_dim * len(self.embed_funcs)
 
     def forward(self, inputs):
-        outputs = torch.cat([func(inputs) for func in self.embed_funcs], -1)
+        outputs = torch.cat([func(inputs) for func in self.embed_funcs], dim=-1)
         return outputs
     
     def extra_repr(self):
@@ -30,7 +30,7 @@ class ResidualBlock(nn.Module):
         self.short_cut = short_cut
         self.linear1 = nn.Linear(dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, dim)
-        self.activation = nn.ReLU()
+        self.relu = nn.ReLU()
         if layer_norm:
             self.norm = nn.LayerNorm(dim)
         else:
@@ -38,11 +38,11 @@ class ResidualBlock(nn.Module):
 
     def forward(self, inputs):
         outputs = self.linear1(inputs)
-        outputs = self.activation(outputs)
+        outputs = self.relu(outputs)
         outputs = self.linear2(outputs)
         if self.norm:
             outputs = self.norm(outputs)
-        outputs = self.activation(outputs + inputs if self.short_cut else outputs)
+        outputs = self.relu(outputs + inputs if self.short_cut else outputs)
         return outputs
 
 class ResidualNet(nn.Module):
