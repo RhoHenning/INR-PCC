@@ -1,6 +1,8 @@
 # INR-PCC
 
-Source code for paper "Point Cloud Compression with Implicit Neural Representations: A Unified Framework".
+Official implementation of paper [Point Cloud Compression with Implicit Neural Representations: A Unified Framework](https://ieeexplore.ieee.org/abstract/document/10681880), IEEE/CIC ICCC 2024.
+
+**This work has been extended to [NeRC<sup>3</sup>](https://github.com/RhoHenning/NeRC3), which further investigates the methodological details and explores multiple solutions to support dynamic point cloud compression.**
 
 ## Requirements
 
@@ -43,7 +45,7 @@ The results can be found in `exp/attribute/result.csv`.
 
 ### Baseline (G-PCC)
 
-This code allows compression using G-PCC, by directly calling the tmc3 software with predefined configurations.
+This repo supports compression using G-PCC, by directly calling the tmc3 software with predefined configurations.
 
 Use the following command for geometry compression by G-PCC.
 
@@ -58,3 +60,17 @@ python baseline.py --cloud_path=loot_vox10_1200.ply --result_dir=gpcc --encode_c
 ```
 
 The results can be found in `gpcc/result.csv`.
+
+## Citation
+
+If you find this work helpful in your research, please cite as follows:
+
+```
+@inproceedings{ruan2024inrpcc,
+  title={Point Cloud Compression with Implicit Neural Representations: A Unified Framework},
+  author={Ruan, Hongning and Shao, Yulin and Yang, Qianqian and Zhao, Liang and Niyato, Dusit},
+  booktitle={2024 IEEE/CIC International Conference on Communications in China (ICCC)},
+  pages={1709--1714},
+  year={2024}
+}
+```
